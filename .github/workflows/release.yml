@@ -27,14 +27,17 @@ jobs:
         run: cmake --build build --config Release --parallel
 
       - name: Prepare Release Package
+        shell: pwsh
         run: |
-          mkdir dist
-          copy bin\Release\gdds_tool.exe dist\
-          copy Dependencies\DirectStorage\lib\x64\dstorage.dll dist\
-          copy Dependencies\DirectStorage\lib\x64\dstoragecore.dll dist\
-          copy README.md dist\
-          copy LICENSE dist\
-          Compress-Archive -Path dist\* -DestinationPath gdds-tool-windows-x64.zip
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          $exe = Get-ChildItem -Path . -Recurse -Filter "gdds_tool.exe" | Where-Object { $_.FullName -notmatch "dist" } | Select-Object -First 1
+          if (-not $exe) { throw "Could not find gdds_tool.exe" }
+          Copy-Item $exe.FullName dist\ -Force
+          Copy-Item Dependencies\DirectStorage\lib\x64\dstorage.dll dist\ -Force
+          Copy-Item Dependencies\DirectStorage\lib\x64\dstoragecore.dll dist\ -Force
+          Copy-Item README.md dist\ -Force
+          Copy-Item LICENSE dist\ -Force
+          Compress-Archive -Path dist\* -DestinationPath gdds-tool-windows-x64.zip -Force
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
